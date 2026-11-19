@@ -42,6 +42,7 @@ export async function generateAnswer({ question, questionType, evidence, decisio
       .map(
         (c) =>
           `- ${c.id} (${c.type}${c.required ? ', required' : ''}): ${c.question} → ${formatValue(c.value)}` +
+          (c.met === true ? ' [requirement met]' : c.met === false ? ' [requirement NOT met]' : c.type === 'BOOLEAN' ? ' [unknown]' : '') +
           (c.reason ? ` | ${c.reason}` : '')
       )
       .join('\n');

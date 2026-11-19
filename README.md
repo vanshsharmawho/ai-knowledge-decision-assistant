@@ -268,6 +268,7 @@ Guarantees around them:
 - **Confidence floor**: a result with confidence < 0.5 becomes `UNKNOWN`.
 - **Rule engine**: for numeric conditions the model only *extracts* `userValue`, `operator` and `threshold`; **code** does the comparison and overrides the model. The UI marks these as "rule engine".
 - **Failure isolation**: decisions run with `Promise.allSettled`; one failed decision becomes `UNKNOWN` → `NEEDS_REVIEW`, never a crash.
+- **Explicit pass value**: the planner states for every condition which answer means "requirement met" (`passWhen`, normally YES), so a condition phrased negatively can't be counted as a pass. A requirement that is clearly not met decides the outcome (NEGATIVE) even if another check is UNKNOWN.
 
 ### Worked example
 

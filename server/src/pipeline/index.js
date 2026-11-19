@@ -5,7 +5,7 @@ import { createRetriever } from '../services/retrieval.js';
 import { toUserError as baseUserError } from '../services/gemini.js';
 import { classifyQuestion, scoreEvidenceSufficiency, DECIDERS } from './decisionModels.js';
 import { decomposeQuestion } from './decompose.js';
-import { combineDecisions } from './combine.js';
+import { combineDecisions, meetsRequirement } from './combine.js';
 import { generateAnswer } from './generate.js';
 import { labelEvidence, mergeChunks, toReferences } from './evidence.js';
 
@@ -184,6 +184,7 @@ export async function answerQuestion(org, question, { debug = false } = {}) {
           question: c.question,
           required: c.required,
           options: c.options,
+          passWhen: c.passWhen,
           value: r.value,
           confidence: r.confidence,
           reason: cleanReason(r.reason),
@@ -206,6 +207,7 @@ export async function answerQuestion(org, question, { debug = false } = {}) {
       };
     });
 
+    for (const c of conditions) c.met = meetsRequirement(c); // true / false / null, shown in the UI
     const combined = combineDecisions(conditions);
     trace.push({ stage: 'combine [application logic]', ms: 0, outcome: combined.outcome });
     decision = { goal: plan.goal, facts: plan.facts, conditions, combined };
@@ -287,7 +289,9 @@ function templateAnswer(decision) {
     NEEDS_REVIEW: 'This cannot be fully decided from the documents. Please contact the organization.',
     INFORMATIONAL: 'Here is what the documents indicate:',
   }[decision.combined.outcome];
-  const lines = decision.conditions.map((c) => `• ${c.question} → ${c.value}${c.reason ? ` (${c.reason})` : ''}`);
+  const lines = decision.conditions.map(
+    (c) => `• ${c.question} → ${c.met === true ? 'met' : c.met === false ? 'not met' : c.value}${c.reason ? ` (${c.reason})` : ''}`
+  );
   return { answerable: true, answer: [verdict, ...lines].join('\n'), citedEvidenceIds: [] };
 }
 

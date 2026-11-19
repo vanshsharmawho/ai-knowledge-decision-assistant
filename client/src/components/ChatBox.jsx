@@ -8,6 +8,12 @@ const OUTCOME_LABEL = {
   INFORMATIONAL: { text: 'Informational', cls: 'info' },
 };
 
+function condClass(c) {
+  if (c.met === true) return 'ok';
+  if (c.met === false) return 'bad';
+  return valueClass(c.value);
+}
+
 function valueClass(v) {
   if (v === 'YES') return 'ok';
   if (v === 'NO') return 'bad';
@@ -29,9 +35,11 @@ function DecisionView({ decision, open }) {
             <div className="cond-head">
               <span className="cond-id">{c.id}</span>
               <span className="cond-type">{c.type}</span>
-              <span className={`pill ${valueClass(c.value)}`}>
+              <span className={`pill ${condClass(c)}`}>
                 {typeof c.value === 'number' ? c.value.toFixed(2) : c.value}
               </span>
+              {c.met === true && <span className="cond-by">requirement met</span>}
+              {c.met === false && <span className="cond-by">requirement not met</span>}
               <span className="cond-by">{c.decidedBy === 'rule-engine' ? 'rule engine' : c.decidedBy}</span>
             </div>
             <div className="cond-q">{c.question}</div>
