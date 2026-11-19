@@ -49,13 +49,13 @@ Multi-condition questions ("Am I eligible if…?") are not sent to one big promp
 | Frontend | React 18 + Vite, React Router | Fast dev setup; dashboard and widget in one app |
 | Backend | Node.js + Express | Simple REST API, easy to reason about |
 | Database | MongoDB (Atlas) via Mongoose | Flexible documents for chunks + embeddings; Atlas Vector Search available |
-| LLM (understanding, answers) | Groq `llama-3.3-70b-versatile` (fallback: Gemini Flash) | Strong reasoning for decomposition and grounded writing |
-| System 1 decision model | Groq `llama-3.1-8b-instant` (fallback: Gemini Flash-Lite) | Small, fast and cheap; used only for narrow typed decisions |
+| LLM (understanding, answers) | Groq `openai/gpt-oss-120b` (fallback: Gemini Flash) | Strong reasoning for decomposition and grounded writing |
+| System 1 decision model | Groq `openai/gpt-oss-20b`, low reasoning effort (fallback: Gemini Flash-Lite) | Small and very fast (~1,000 tokens/s); used only for narrow typed decisions |
 | Embeddings | Gemini `gemini-embedding-001` (768 dims) | Good multilingual retrieval embeddings, free tier |
 | PDF parsing | `pdf-parse` (pdf.js) with a per-page renderer | Keeps page numbers for references |
 | Validation | `zod` | Validates every model output and every request body |
 
-Models are configured in `.env`, so they can be swapped without code changes.
+Models are configured in `.env`, so they can be swapped without code changes. Providers retire models often (the project started on Llama 3.x, which Groq has since removed); changing two lines in `.env` is enough.
 
 ---
 
@@ -152,8 +152,8 @@ flowchart LR
   end
 
   subgraph AI["AI providers"]
-    LLM["LLM<br/>llama-3.3-70b"]
-    S1["System 1 model<br/>llama-3.1-8b"]
+    LLM["LLM<br/>gpt-oss-120b"]
+    S1["System 1 model<br/>gpt-oss-20b"]
     EMB["Embeddings<br/>gemini-embedding-001"]
   end
 
@@ -254,7 +254,7 @@ flowchart TD
 
 ### System 1 decision models
 
-Each decision model is a **narrow, typed function**: one question in, one constrained value out. They run on a small fast model (`llama-3.1-8b-instant`) at temperature 0. They see only the user's stated facts and the evidence for *their* condition, and they never write user-facing prose.
+Each decision model is a **narrow, typed function**: one question in, one constrained value out. They run on a small fast model (`openai/gpt-oss-20b`, low reasoning effort) at temperature 0. They see only the user's stated facts and the evidence for *their* condition, and they never write user-facing prose.
 
 | Type | Output | Example |
 |---|---|---|
@@ -443,7 +443,7 @@ All responses are JSON. Errors look like `{ "error": { "code": "PAGE_LIMIT_EXCEE
 - **Each question is independent**: the assistant has no conversation memory, so "what about the hostel?" after a scholarship question isn't linked to it.
 - **Processing is synchronous** (fine within the 20-page limit); a job queue would be needed for larger files.
 - **In-app vector search** loads one organization's chunks per question. That's fast at this scale (≤ 10 × 20 pages), but larger tenants should switch on Atlas Vector Search (supported, see Setup).
-- **Free-tier LLM limits**: Groq and Gemini free tiers have rate limits; the server retries and falls back between providers, but heavy use needs paid keys.
+- **Free-tier LLM limits**: Groq and Gemini free tiers have rate limits; the server retries and falls back between providers, but heavy use needs paid keys. Output-token reservations are kept small per role to stay within Groq's tokens-per-minute limit.
 - **Latency**: a multi-condition question makes about 5 sequential AI stages (several of them parallel inside), typically 5–15 s on free tiers.
 - **Decision quality depends on retrieval**: if a rule isn't retrieved, its condition becomes `UNKNOWN` and the answer is marked for human review rather than guessed.
 - The assistant token is a **publishable key** by design (it appears in embed code). It only allows asking questions, is rate-limited, and can be rotated.

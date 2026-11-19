@@ -23,8 +23,10 @@ export const config = {
   llmProvider: (process.env.LLM_PROVIDER || 'groq').toLowerCase(),
   groq: {
     apiKey: process.env.GROQ_API_KEY || '',
-    chatModel: process.env.GROQ_CHAT_MODEL || 'llama-3.3-70b-versatile',
-    decisionModel: process.env.GROQ_DECISION_MODEL || 'llama-3.1-8b-instant',
+    chatModel: process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b',
+    decisionModel: process.env.GROQ_DECISION_MODEL || 'openai/gpt-oss-20b',
+    // For reasoning models (gpt-oss): low = fast, enough for narrow structured tasks
+    reasoningEffort: process.env.GROQ_REASONING_EFFORT || 'low',
   },
 
   gemini: {

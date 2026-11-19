@@ -186,7 +186,7 @@ export async function answerQuestion(org, question, { debug = false } = {}) {
           options: c.options,
           value: r.value,
           confidence: r.confidence,
-          reason: r.reason,
+          reason: cleanReason(r.reason),
           decidedBy: r.decidedBy,
           rule: r.rule,
           references: toReferences(r.evidenceIds, r.evidence),
@@ -252,6 +252,19 @@ export async function answerQuestion(org, question, { debug = false } = {}) {
     questionType,
     decision?.conditions.length || 0
   );
+}
+
+/** Remove internal evidence labels ("E2 states…", "(E1)") from text shown to visitors. */
+function cleanReason(text) {
+  if (!text) return text;
+  return text
+    .replace(/\(\s*E\d+(\s*,\s*E\d+)*\s*\)/g, '')
+    .replace(/\bE\d+\s+(states|says|shows|permits|indicates|mentions|confirms)\b/gi, 'The document $1')
+    .replace(/\b(in|from|per|according to)\s+E\d+\b/gi, '$1 the document')
+    .replace(/\bE\d+\b/g, 'the document')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([.,;:])/g, '$1')
+    .trim();
 }
 
 function dedupeRefs(refs) {

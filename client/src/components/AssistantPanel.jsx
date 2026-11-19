@@ -83,7 +83,7 @@ export default function AssistantPanel({ onAsked }) {
       <h3>Try it here</h3>
       <p className="muted small">Test questions with the pipeline details shown (decisions, timings).</p>
       <div className="try-box">
-        <ChatBox token={info.token} suggestions={["Hi", "Summerize everything in 2 lines"]} debug onAsked={onAsked} />
+        <ChatBox token={info.token} debug onAsked={onAsked} />
       </div>
     </section>
   );

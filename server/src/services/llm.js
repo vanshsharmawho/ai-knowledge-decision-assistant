@@ -45,6 +45,7 @@ export async function generateJSON({ role = 'chat', system, prompt, schema, temp
 
 async function groqJSON({ role, system, prompt, schema, temperature, maxOutputTokens }) {
   const model = role === 'decision' ? config.groq.decisionModel : config.groq.chatModel;
+  const isReasoning = /gpt-oss|qwen3|deepseek-r1/i.test(model);
   const schemaText = JSON.stringify(toJsonSchema(schema));
   const messages = [
     {
@@ -64,7 +65,11 @@ async function groqJSON({ role, system, prompt, schema, temperature, maxOutputTo
           model,
           messages,
           temperature,
-          max_tokens: Math.min(maxOutputTokens, 4096),
+          // Groq's free tier counts max_tokens against a tokens-per-minute limit, so reserve
+          // only what each role needs. Reasoning models (gpt-oss) also spend tokens thinking,
+          // so they get a little more room and a low reasoning effort.
+          max_tokens: role === 'decision' ? (isReasoning ? 1024 : 400) : isReasoning ? 2500 : 1500,
+          ...(isReasoning ? { reasoning_effort: config.groq.reasoningEffort } : {}),
           response_format: { type: 'json_object' },
         }),
         signal: AbortSignal.timeout(config.gemini.timeoutMs),

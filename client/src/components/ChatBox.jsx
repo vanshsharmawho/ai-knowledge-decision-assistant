@@ -15,12 +15,12 @@ function valueClass(v) {
   return 'info';
 }
 
-function DecisionView({ decision }) {
+function DecisionView({ decision, open }) {
   const o = OUTCOME_LABEL[decision.outcome] || OUTCOME_LABEL.INFORMATIONAL;
   return (
-    <details className="decision" open>
+    <details className="decision" open={open}>
       <summary>
-        <span>Decision: {decision.goal}</span>
+        <span>{open ? `Decision: ${decision.goal}` : 'Why this answer?'}</span>
         <span className={`pill ${o.cls}`}>{o.text}</span>
       </summary>
       <ul>
@@ -118,7 +118,7 @@ export default function ChatBox({ token, debug = false, onAsked, suggestions = [
               {m.status === 'needs_review' && <div className="tag warn">Needs human review</div>}
               {m.status === 'error' && <div className="tag bad">Error</div>}
               <div className="answer">{m.answer}</div>
-              {m.decision && <DecisionView decision={m.decision} />}
+              {m.decision && <DecisionView decision={m.decision} open={debug} />}
               {m.references?.length > 0 && (
                 <div className="refs">
                   <div className="refs-title">Sources</div>
